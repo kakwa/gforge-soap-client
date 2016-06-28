@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# vim:set expandtab tabstop=4 shiftwidth=4:
+
+from __future__ import unicode_literals
+import sys
+import os
+import codecs
+from optparse import OptionParser
+import gforge_soap_client
+from mako.template import Template
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+if __name__ == '__main__':
+    usage = "usage: %prog <ARGS>\n"
+
+    parser = OptionParser(usage=usage)
+    parser.add_option("-l", "--login", dest="login", 
+            help="login to connect to the SOAP API", 
+            metavar="LOGIN")
+    parser.add_option("-p", "--password", dest="password", 
+            help="password to connect to the soap API", 
+            metavar="PWD")
+    parser.add_option("-P", "--project", dest="project",
+            help="project to scan", 
+            metavar="PROJ")
+    parser.add_option("-u", "--url", dest="url", 
+            help="url of the soap API", 
+            metavar="URL")
+    parser.add_option("-t", "--template", dest="template", 
+            help="template used to generate the file", 
+            metavar="TEMPL")
+    parser.add_option("-o", "--out", dest="out",
+            help="out file (mandatory if --stdout not used)",
+            metavar="OUT")
+    parser.add_option("-s", "--stdout",
+            action="store_true", dest="stdout", default=False,
+            help="print file content to stdout")
+ 
+    (options, args) = parser.parse_args()
+
+    login = options.login
+    password = options.password
+    url = options.url
+    project = options.project
+    template  = options.template
+
+    if login is None or password is None or url is None or project is None:
+        print("[ERROR] missing argument(s), consult --help")
+        exit(1)
+    if template is None:
+        print("ERROR: missing option --template")
+        exit(1)
+    if not os.path.isfile(template):
+        print("ERROR: template '%(templ)s' doesn't exist" % {'templ': template})
+        exit(1)
+    if not options.stdout and options.out is None:
+        print("ERROR: missing output file")
+        sys.exit(1)
+    mytemplate = Template(filename=template, default_filters=['decode.utf8'], output_encoding='utf-8')
+
+    gTracker = gforge_soap_client.SoapClient(url, login, password,  project)
+    gTracker.import_trackers()
+
+    ret = mytemplate.render(trackers=gTracker)    
+    
+    if options.stdout:
+        print(ret)
+    else:
+        out = options.out
+        try:
+            f = open(out, 'w')
+        except:
+            print("ERROR: failed to open out file '%(file)s'" %
+                  {'file': out})
+            exit(1)
+        f.write(ret)
+        f.close()

@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# vim:set expandtab tabstop=4 shiftwidth=4:
+
+from __future__ import unicode_literals
+import sys
+import codecs
+from optparse import OptionParser
+import gforge_soap_client
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+if __name__ == '__main__':
+    usage = "usage: %prog <ARGS>\n"
+
+    parser = OptionParser(usage=usage)
+    parser.add_option("-l", "--login", dest="login", 
+            help="login to connect to the SOAP API", 
+            metavar="LOGIN")
+    parser.add_option("-p", "--password", dest="password", 
+            help="password to connect to the soap API", 
+            metavar="PWD")
+    parser.add_option("-P", "--project", dest="project",
+            help="project to scan", 
+            metavar="PROJ")
+    parser.add_option("-u", "--url", dest="url", 
+            help="url of the soap API", 
+            metavar="URL")
+ 
+    (options, args) = parser.parse_args()
+
+    login = options.login
+    password = options.password
+    url = options.url
+    project = options.project
+    if login is None or password is None or url is None or project is None:
+        print("[ERROR] missing argument(s), consult --help")
+        exit(1)
+
+    gTracker = gforge_soap_client.SoapClient(url, login, password,  project)
+    gTracker.import_trackers()
+    gTracker.print_trackers()
